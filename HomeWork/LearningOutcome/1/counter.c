@@ -9,8 +9,8 @@ int main(int argc, char const *argv[])
     printf("Enter text: ");
     scanf("%[^\n]",String);
     int words=count(String);
-    int letters=countLetters(String);
     #if defined(c)
+        int letters=countLetters(String);
         printf("%d words (%d characters)",words,letters);
     #else 
         printf("%d words",words);  

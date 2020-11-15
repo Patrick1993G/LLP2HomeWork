@@ -37,8 +37,8 @@ bool should_count_chars(int argc, char* argv[]){
     }
 }
 
-bool is_space(char c){
-    if(c == ' '){
+bool is_space(char ch){
+    if(ch == ' '){
         return true;
     }else{
         return false;
