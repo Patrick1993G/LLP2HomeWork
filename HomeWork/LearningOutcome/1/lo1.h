@@ -1,3 +1,7 @@
+
+
+#ifndef lo1
+#define lo1
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,8 +29,7 @@ int countLetters(char text[]){
             continue;
         }
     }
-    
-    return count;
+return count;
 }
 
 bool should_count_chars(int argc, char* argv[]){
@@ -37,10 +40,11 @@ bool should_count_chars(int argc, char* argv[]){
     }
 }
 
-bool is_space(char c){
-    if(c == ' '){
+bool is_space(char cchar){
+    if( cchar == ' '){
         return true;
     }else{
         return false;
     }
 }
+#endif
