@@ -5,7 +5,7 @@ char c;
 
 void do_user_input()
 {
-	char* buffer = (char*)malloc(128);
+	char* buffer = (char*)malloc(sizeof(char));
 	int number = 0;
 
 	printf("Enter a word: ");
