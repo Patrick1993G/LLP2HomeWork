@@ -17,7 +17,7 @@ void init_pointers()
 
 void print_pointers()
 {
-	//char local_array[100] = {0};
+	char local_array[100] = {0};
 
 	printf("pointer_heap:  %s\n", pointer_heap);
 	printf("pointer_stack: %s\n", pointer_stack);
