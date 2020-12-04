@@ -1,0 +1,28 @@
+Scenario
+You have an area of size 100 by 100 to work with. Every point in this area is described by an X-Y coordinates which can only by whole positive numbers. Make sure that there are no memory leaks.
+
+Task
+Create two structures as below (using the least memory possible):
+
+Rectangle
+x-coord
+y-coord
+width
+height
+Point
+x-coord
+y-coord
+name (char*)
+Implement the following functions:
+
+equals_point(point1, point2)
+returns true if the points' x & y are the same
+equals_rect(rect1, rect2)
+checks if the structures are the same using memcmp(), returns true/false accordingly
+contains(rect, point)
+returns true if the point is in the rectangle
+main()
+Generate a rectangle of 50x50 at a random location (make sure it stays within your area)
+Generate 1,000 unique points, named "Point1", "Point2", etc.
+Check if the generated points are in the rectangle or not
+Print out the percentage of points that are in the rectangle (should be around 25%)
