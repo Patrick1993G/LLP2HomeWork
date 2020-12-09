@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <time.h>
+
 typedef struct Rectangle{
     unsigned int xcoord;
     unsigned int ycoord;

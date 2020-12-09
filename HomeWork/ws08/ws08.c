@@ -121,12 +121,13 @@ void printList(){
 
 /* Frees all the persons in the list */
 void free_list() {
-   person* head = get_list_head(),*temp;
+   person* head = get_list_head();
     while(head != NULL){
-        temp = head;
-        free(temp);
+        person* temp = head;
         head = head->next;
+        free(temp);
     }
+    set_list_head(NULL);
 }
 
 
@@ -140,9 +141,9 @@ void free_list() {
 /* Add a person to the list at a specific index */
 void add_person_at_index(person* new_person, int index) {
     person* previous = get_person_at_index(index-1);
-   // person* temp = NULL;
+    
     size_t length = count_list_size();
-    // size_t count = 0;
+    
     if(index <= length-1){// check if index is valid
 
         if(index == count_list_size()-1){ // then its in the end
@@ -237,9 +238,6 @@ int main (int argc, char *argv[]) {
 
 //free list and confirm count is zero
     free_list();
-    printList();
     assert (count_list_size() == 0);
-    
-    
     return 0;
 }
