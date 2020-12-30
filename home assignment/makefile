@@ -1,13 +1,17 @@
 build_all: client server
 
-rebuild_all: clean client server
+rebuild_all: clean build_all
 
 client:
-	gcc -Wall -0o client client.c
+	gcc -Wall -o client client.c
 
 server:
-	gcc -Wall -0o server server.c
+	gcc -Wall -o server server.c
 
+debug: 
+	gcc -Wall -g -O0 -o client client.c 
+	gcc -Wall -g -O0 -o server server.c 
+release:
 
 clean_all:
 	-rm server client

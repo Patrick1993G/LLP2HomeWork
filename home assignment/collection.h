@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 
+#include <time.h>
 typedef struct SENSORS
 {
     int MOISTURE;
@@ -11,6 +8,12 @@ typedef struct SENSORS
     char STATS[200];
     struct SENSORS* next;
 } sensor;
+
+int generate(int number,int lower, int upper){
+    srand(time(0));
+    int num=(number % (upper - lower + 1))+lower;
+    return num;
+}
 
 /* Head of the list. NULL means empty list (start)*/
 sensor *list_head = NULL;
