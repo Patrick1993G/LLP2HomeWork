@@ -1,4 +1,5 @@
-
+#ifndef files
+#define files
 //opening a file
 FILE* openFile(char *symbol)
 {
@@ -46,3 +47,4 @@ void writeToFile(char* toWrite)
 	}
 	
 }
+#endif

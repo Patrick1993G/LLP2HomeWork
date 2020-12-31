@@ -10,15 +10,7 @@
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
 #define MSG "Connected to client!"
-int sendToServer(int sockfd, char *message)
-{
-    if (send(sockfd, message, strlen(message), 0) == -1)
-    {
-        printf("ERROR: send failed !\n");
-        return -3;
-    }
-    return 0;
-}
+
 int main(int argc, char const *argv[])
 {
     int sockfd = 0;
@@ -57,26 +49,28 @@ int main(int argc, char const *argv[])
         return -2;
     }
 
-    while (true)
+    do
     {
         memset(sendBuffer, 0, BUFFER_SIZE);
         memset(recvBuffer, 0, BUFFER_SIZE);
         //recieve
-      	printf(" \nEnter your request:");
-		fgets(sendBuffer, BUFFER_SIZE-1, stdin);
-		if (write(sockfd, sendBuffer, strlen(sendBuffer)+1) < 0)
-		{
-			fprintf(stderr, "write to buffer failed\n");
-			return -3;
-		}
-		if (read(sockfd, recvBuffer, BUFFER_SIZE-1) < 0)
-		{
-			fprintf(stderr, "reading from buffer failed\n");
-			return -4;
-		}
-		
-		printf("Received: %s", recvBuffer);
-    }
+        printf(" \nEnter your request:");
+
+        fgets(sendBuffer, BUFFER_SIZE - 1, stdin);
+        if (write(sockfd, sendBuffer, strlen(sendBuffer) + 1) < 0)
+        {
+            fprintf(stderr, "write to buffer failed\n");
+            return -3;
+        }
+        if (read(sockfd, recvBuffer, BUFFER_SIZE - 1) < 0)
+        {
+            fprintf(stderr, "reading from buffer failed\n");
+            return -4;
+        }
+
+        printf("Received: %s", recvBuffer);
+        //PASS to Descriptive method to describe the values
+    }while(1);
 
     close(sockfd); // close connections
     return 0;

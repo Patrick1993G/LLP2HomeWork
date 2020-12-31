@@ -1,19 +1,14 @@
-
-#include <time.h>
+#ifndef collection
+#define collection
 typedef struct SENSORS
 {
     int MOISTURE;
     int PH;
     int SUNLIGHT;
-    char STATS[200];
+    char STATS[100];
     struct SENSORS* next;
 } sensor;
 
-int generate(int number,int lower, int upper){
-    srand(time(0));
-    int num=(number % (upper - lower + 1))+lower;
-    return num;
-}
 
 /* Head of the list. NULL means empty list (start)*/
 sensor *list_head = NULL;
@@ -72,11 +67,18 @@ void add_sensor_at_end(sensor* new_sensor) {
     }
 }
 
-// /* Prints a string representation of a sensor */
-// void print_person(sensor* s) {
-//     printf("Name = %s, Surname = %s, Address = %s, YOB = %d\n",s->name,s->surname,s->address,s->yob);
-// }
-
+/* Prints a string representation of a sensor */
+void getStats(sensor* s) {
+    printf("PH = %d, MOISTURE = %d, SUNLIGHT = %d \n",s->PH,s->MOISTURE,s->SUNLIGHT);
+}
+//Prints the List
+void printList(){
+    sensor* s = get_list_head();
+    for(size_t i=0;i<count_list_size();i++){
+        getStats(s);
+        s = s->next;
+    }
+}
 /* Returns a pointer to the sensor at the specified index or NULL if nothing is there */
 sensor* get_sensor_at_index(int index) {
     sensor* head = get_list_head();
@@ -156,3 +158,4 @@ void add_sensor_at_index(sensor* new_sensor, int index) {
 //     }
 //     return NULL;
 // }
+#endif
