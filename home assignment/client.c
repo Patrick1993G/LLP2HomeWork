@@ -11,6 +11,61 @@
 #define HTTP_PORT 44444
 #define MSG "Connected to client!"
 
+//describes the values recieved by the server
+void describe(char *recvBuffer, char *sendBuffer)
+{
+    if (strcmp(recvBuffer, "OK\n") == 0)
+    {
+        printf("%s All values are cleared", recvBuffer);
+    }
+    else if (strcmp(sendBuffer, "PH\n") == 0 || strcmp(sendBuffer, "ph\n") == 0)
+    {
+        if (atoi(recvBuffer) < 7 && atoi(recvBuffer) > 4)
+        {
+            printf("PH level is %s : it is slightly acidic", recvBuffer);
+        }
+        else if (atoi(recvBuffer) > 0 && atoi(recvBuffer) < 4)
+        {
+            printf("PH level is %s : it is strongly acidic", recvBuffer);
+        }
+        else if (atoi(recvBuffer) > 6 && atoi(recvBuffer) < 8)
+        {
+            printf("PH level is %s : it is neutral", recvBuffer);
+        }
+        else if (atoi(recvBuffer) > 7 && atoi(recvBuffer) < 9)
+        {
+            printf("PH level is %s : it is slightly alkaline", recvBuffer);
+        }
+        else
+            printf("PH level is %s : it is strongly alkaline", recvBuffer);
+    }
+    else if (strcmp(sendBuffer, "MOISTURE\n") == 0 || strcmp(sendBuffer, "moisture\n") == 0)
+    {
+        if (atoi(recvBuffer) < 4 && atoi(recvBuffer) > 0)
+        {
+            printf("Moisture level is %s : it is slightly moist", recvBuffer);
+        }
+        else if (atoi(recvBuffer) > 6 && atoi(recvBuffer) < 11)
+        {
+            printf("Moisture level is %s : it is wet", recvBuffer);
+        }
+        else
+            printf("Moisture level is %s : it is moderate", recvBuffer);
+    }
+    else if (strcmp(sendBuffer, "SUNLIGHT\n") == 0 || strcmp(sendBuffer, "sunlight\n") == 0)
+    {
+        if (atoi(recvBuffer) < 400 && atoi(recvBuffer) > 0)
+        {
+            printf("Sunlight level is %s : it is dark", recvBuffer);
+        }
+        else if (atoi(recvBuffer) > 1500 && atoi(recvBuffer) < 2001)
+        {
+            printf("Sunlight level is %s : it is bright", recvBuffer);
+        }
+        else
+            printf("Sunlight level is %s : it is moderately bright", recvBuffer);
+    }
+}
 int main(int argc, char const *argv[])
 {
     int sockfd = 0;
@@ -68,9 +123,9 @@ int main(int argc, char const *argv[])
             return -4;
         }
 
-        printf("Received: %s", recvBuffer);
         //PASS to Descriptive method to describe the values
-    }while(1);
+        describe(recvBuffer, sendBuffer);
+    } while (1);
 
     close(sockfd); // close connections
     return 0;

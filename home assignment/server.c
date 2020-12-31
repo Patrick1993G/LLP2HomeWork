@@ -26,6 +26,7 @@ sensor generateData()
     data.SUNLIGHT = generate(0, 2000);
     return data;
 }
+
 char *feedback(char *message)
 {
     char *toReturn = (char *)malloc(sizeof(char) * BUFFER_SIZE);
