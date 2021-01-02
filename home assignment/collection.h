@@ -69,6 +69,7 @@ void add_sensor_at_end(sensor* new_sensor) {
 
 /* Prints a string representation of a sensor */
 void getStats(sensor* s) {
+     
     printf("PH = %d, MOISTURE = %d, SUNLIGHT = %d \n",s->PH,s->MOISTURE,s->SUNLIGHT);
 }
 //Prints the List

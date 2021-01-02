@@ -14,13 +14,13 @@
 //describes the values recieved by the server
 void describe(char *recvBuffer, char *sendBuffer)
 {
-    if (strcmp(recvBuffer, "OK\n") == 0)
+    if (strcmp(sendBuffer, "RESET\n") == 0 || strcmp(sendBuffer, "reset\n") == 0)
     {
-        printf("%s All values are cleared", recvBuffer);
+        printf("All values are cleared");
     }
     else if (strcmp(sendBuffer, "PH\n") == 0 || strcmp(sendBuffer, "ph\n") == 0)
     {
-        if (atoi(recvBuffer) < 7 && atoi(recvBuffer) > 4)
+        if (atoi(recvBuffer) < 7 && atoi(recvBuffer) >= 4)
         {
             printf("PH level is %s : it is slightly acidic", recvBuffer);
         }
@@ -28,15 +28,15 @@ void describe(char *recvBuffer, char *sendBuffer)
         {
             printf("PH level is %s : it is strongly acidic", recvBuffer);
         }
-        else if (atoi(recvBuffer) > 6 && atoi(recvBuffer) < 8)
+        else if (atoi(recvBuffer) > 6 && atoi(recvBuffer) <= 7)
         {
             printf("PH level is %s : it is neutral", recvBuffer);
         }
-        else if (atoi(recvBuffer) > 7 && atoi(recvBuffer) < 9)
+        else if (atoi(recvBuffer) >= 8 && atoi(recvBuffer) <= 11)
         {
             printf("PH level is %s : it is slightly alkaline", recvBuffer);
         }
-        else
+        else if(atoi(recvBuffer) > 11 && atoi(recvBuffer) <= 14)
             printf("PH level is %s : it is strongly alkaline", recvBuffer);
     }
     else if (strcmp(sendBuffer, "MOISTURE\n") == 0 || strcmp(sendBuffer, "moisture\n") == 0)
@@ -65,11 +65,18 @@ void describe(char *recvBuffer, char *sendBuffer)
         else
             printf("Sunlight level is %s : it is moderately bright", recvBuffer);
     }
+    else if (strcmp(sendBuffer, "STATS\n") == 0 || strcmp(sendBuffer, "stats\n") == 0)
+    {   
+        printf("%s Number of calls recorded for each command since last reset", recvBuffer);
+    }
+    else
+    {
+        printf("Unknown command");
+    }
 }
 int main(int argc, char const *argv[])
 {
     int sockfd = 0;
-    //int num_bytes = 0;
     char sendBuffer[BUFFER_SIZE], recvBuffer[BUFFER_SIZE];
     struct sockaddr_in serv_addr;
 
