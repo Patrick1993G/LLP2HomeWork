@@ -10,15 +10,17 @@ rebuild_all: clean build_all
 
 debug: 
 	$(MKDIR) bin/dbg
-	gcc -Wall -g -O0 -o  bin/dbg/client_full -DFULL client.c
+	gcc -Wall -g -O0 -o  bin/dbg/client_full -DFULL -DDBG client.c
 	gcc -Wall -g -O0 -o bin/dbg/client_normal client.c
-	gcc -Wall -g -O0 -o bin/dbg/server server.c 
+	gcc -Wall -g -O0 -o bin/dbg/server -DDBGSERVER server.c 
+	#gcc -Wall -g -O0 -o bin/dbg/files files.c 
 
 release:
 	$(MKDIR) bin/rel
 	gcc -o bin/rel/client_normal client.c
 	gcc -o bin/rel/server server.c 
 	gcc -o bin/rel/client_full -DFULL client.c
+	#gcc -o bin/rel/files files.c 
 	
 clean_all:
 	$(RM) bin

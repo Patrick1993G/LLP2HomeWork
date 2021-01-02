@@ -5,8 +5,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include "collection.h"
+#include <time.h>
 #include "files.h"
-
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
 #define MSG "Connected to client!"
@@ -73,6 +73,17 @@ void describe(char *recvBuffer, char *sendBuffer)
     {
         printf("Unknown command");
     }
+    //writing to file if FULL is defined
+    #if defined (FULL)
+            //get time
+            time_t timeStamp = time(NULL);
+            char* timeString = ctime(&timeStamp);
+            char toFile [BUFFER_SIZE];
+            memset(toFile, 0, BUFFER_SIZE);
+            sprintf(toFile,"%s : %s --> %s",timeString,sendBuffer,recvBuffer);
+            writeFile('c',toFile);
+            printf("\nWriting to file...");
+        #endif
 }
 int main(int argc, char const *argv[])
 {

@@ -35,6 +35,10 @@ sensor* initialiseCollection(){
     recSensData->SUNLIGHT=0;
     return recSensData;
 }
+void updatestats(char* toReturn ,sensor*recSensData){
+    sprintf(toReturn,"PH:%d,MOISTURE:%d,SUNLIGHT:%d",recSensData->PH,recSensData->MOISTURE,recSensData->SUNLIGHT);
+    strcpy(recSensData->STATS,toReturn);
+}
 void chat(int newsockfd, char *buffer)
 { 
      //generate a collection
@@ -65,21 +69,24 @@ void chat(int newsockfd, char *buffer)
         {
             sprintf(toReturn, "%d", data.PH);
             recSensData->PH +=1;
+            updatestats(toReturn,recSensData);
         }
         else if (strcmp(buffer, "MOISTURE\n") == 0 || strcmp(buffer, "moisture\n") == 0)
         {
             sprintf(toReturn, "%d", data.MOISTURE);
             recSensData->MOISTURE+=1;
+            updatestats(toReturn,recSensData);
         }
         else if (strcmp(buffer, "SUNLIGHT\n") == 0 || strcmp(buffer, "sunlight\n") == 0)
         {
             sprintf(toReturn, "%d", data.SUNLIGHT);
             recSensData->SUNLIGHT+=1;
+            updatestats(toReturn,recSensData);
         }
         else if (strcmp(buffer, "STATS\n") == 0 || strcmp(buffer, "stats\n") == 0)
         {  
-            sprintf(toReturn,"PH:%d,MOISTURE:%d,SUNLIGHT:%d",recSensData->PH,recSensData->MOISTURE,recSensData->SUNLIGHT);
-            strcpy(recSensData->STATS,toReturn);
+            updatestats(toReturn,recSensData);
+            printf("%s",recSensData->STATS);
         }
         else{
             sprintf(toReturn,"UNKNOWN");
@@ -93,10 +100,18 @@ void chat(int newsockfd, char *buffer)
         //     add_sensor_at_end(recSensData);
         // }
         
-        //writing to file if FULL is defined
-        #if defined (FULL)
-            //write to file
-        #endif
+        //writing to file 
+        if(strcmp(toReturn,"UNKNOWN") != 0){
+            time_t timeStamp = time(NULL);
+            char* timeString = ctime(&timeStamp);
+            char toFile [BUFFER_SIZE];
+            memset(toFile, 0, BUFFER_SIZE);
+            sprintf(toFile,"%s : PH: %d Moisture %d Sunlight %d Stats %s",timeString,recSensData->PH,recSensData->MOISTURE,recSensData->SUNLIGHT,recSensData->STATS);
+            writeFile('s',toFile);
+            printf("\nWriting to file...");
+            printf("\nFile updated");
+        }
+        
         // if message contains exit.
         if (strncmp("exit", buffer, 4) == 0)
         {

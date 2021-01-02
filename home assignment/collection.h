@@ -5,7 +5,7 @@ typedef struct SENSORS
     int MOISTURE;
     int PH;
     int SUNLIGHT;
-    char STATS[100];
+    char STATS[200];
     struct SENSORS* next;
 } sensor;
 
