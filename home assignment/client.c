@@ -11,80 +11,111 @@
 #define HTTP_PORT 44444
 #define MSG "Connected to client!"
 
+void sendTofile(char*sendBuffer,char*recvBuffer){
+     //get time
+    time_t timeStamp = time(NULL);
+    char* timeString = ctime(&timeStamp);
+    char toFile [BUFFER_SIZE];
+    memset(toFile, 0, BUFFER_SIZE);
+    sprintf(toFile,"%s : %s --> %s",timeString,sendBuffer,recvBuffer);
+    writeFile('c',toFile);
+    printf("Writing to file...\n");
+    printf("File updated\n");
+}
+
 //describes the values recieved by the server
 void describe(char *recvBuffer, char *sendBuffer)
-{
+{   char path [50];
+    memset(path, 0, 50);
+    bool reset = false;
     if (strcmp(sendBuffer, "RESET\n") == 0 || strcmp(sendBuffer, "reset\n") == 0)
-    {
-        printf("All values are cleared");
+    {   
+        #if defined(DBGCLIENT)
+            strcpy(path,"./bin/dbg/log.txt");
+        #endif
+        #if defined(FULL)
+            strcpy(path,"./bin/rel/log.txt");
+        #endif
+        printf("Sent reset to server ! waiting for reply...\n");
+        if(strcmp(recvBuffer, "OK") == 0){ // if server file was deleted
+            if(removeFile(path)){
+                reset = true;
+            }
+        }
+        
     }
     else if (strcmp(sendBuffer, "PH\n") == 0 || strcmp(sendBuffer, "ph\n") == 0)
     {
         if (atoi(recvBuffer) < 7 && atoi(recvBuffer) >= 4)
         {
-            printf("PH level is %s : it is slightly acidic", recvBuffer);
+            printf("PH level is %s : it is slightly acidic\n", recvBuffer);
         }
         else if (atoi(recvBuffer) > 0 && atoi(recvBuffer) < 4)
         {
-            printf("PH level is %s : it is strongly acidic", recvBuffer);
+            printf("PH level is %s : it is strongly acidic\n", recvBuffer);
         }
         else if (atoi(recvBuffer) > 6 && atoi(recvBuffer) <= 7)
         {
-            printf("PH level is %s : it is neutral", recvBuffer);
+            printf("PH level is %s : it is neutral\n", recvBuffer);
         }
         else if (atoi(recvBuffer) >= 8 && atoi(recvBuffer) <= 11)
         {
-            printf("PH level is %s : it is slightly alkaline", recvBuffer);
+            printf("PH level is %s : it is slightly alkaline\n", recvBuffer);
         }
         else if(atoi(recvBuffer) > 11 && atoi(recvBuffer) <= 14)
-            printf("PH level is %s : it is strongly alkaline", recvBuffer);
+        {
+            printf("PH level is %s : it is strongly alkaline\n", recvBuffer);
+        }
+        else if(atoi(recvBuffer) <= 0 ){
+              printf("PH level is %s : it is pure acid!\n", recvBuffer);
+        }
     }
     else if (strcmp(sendBuffer, "MOISTURE\n") == 0 || strcmp(sendBuffer, "moisture\n") == 0)
     {
         if (atoi(recvBuffer) < 4 && atoi(recvBuffer) > 0)
         {
-            printf("Moisture level is %s : it is slightly moist", recvBuffer);
+            printf("Moisture level is %s : it is slightly moist\n", recvBuffer);
         }
         else if (atoi(recvBuffer) > 6 && atoi(recvBuffer) < 11)
         {
-            printf("Moisture level is %s : it is wet", recvBuffer);
+            printf("Moisture level is %s : it is wet\n", recvBuffer);
         }
         else
-            printf("Moisture level is %s : it is moderate", recvBuffer);
+            printf("Moisture level is %s : it is moderate\n", recvBuffer);
     }
     else if (strcmp(sendBuffer, "SUNLIGHT\n") == 0 || strcmp(sendBuffer, "sunlight\n") == 0)
     {
         if (atoi(recvBuffer) < 400 && atoi(recvBuffer) > 0)
         {
-            printf("Sunlight level is %s : it is dark", recvBuffer);
+            printf("Sunlight level is %s : it is dark\n", recvBuffer);
         }
         else if (atoi(recvBuffer) > 1500 && atoi(recvBuffer) < 2001)
         {
-            printf("Sunlight level is %s : it is bright", recvBuffer);
+            printf("Sunlight level is %s : it is bright\n", recvBuffer);
         }
         else
             printf("Sunlight level is %s : it is moderately bright", recvBuffer);
     }
     else if (strcmp(sendBuffer, "STATS\n") == 0 || strcmp(sendBuffer, "stats\n") == 0)
     {   
-        printf("%s Number of calls recorded for each command since last reset", recvBuffer);
+        printf("%s Number of calls recorded for each command since last reset\n", recvBuffer);
     }
     else
     {
-        printf("Unknown command");
+        printf("Unknown command\n");
     }
-    //writing to file if FULL is defined
-    #if defined (FULL)
-            //get time
-            time_t timeStamp = time(NULL);
-            char* timeString = ctime(&timeStamp);
-            char toFile [BUFFER_SIZE];
-            memset(toFile, 0, BUFFER_SIZE);
-            sprintf(toFile,"%s : %s --> %s",timeString,sendBuffer,recvBuffer);
-            writeFile('c',toFile);
-            printf("\nWriting to file...");
+    if(!reset){
+        //writing to file if FULL is defined
+        #if defined (DBGCLIENT)
+            sendTofile(sendBuffer,recvBuffer);
         #endif
+        #if defined (FULL)
+            sendTofile(sendBuffer,recvBuffer);
+        #endif
+    }
+    
 }
+
 int main(int argc, char const *argv[])
 {
     int sockfd = 0;

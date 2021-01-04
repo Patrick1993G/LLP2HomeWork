@@ -12,7 +12,6 @@
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
 
-
 int generate(int lower, int upper)
 {
     srand((unsigned)time(NULL));
@@ -20,115 +19,134 @@ int generate(int lower, int upper)
     return num;
 }
 
-sensor generateData()
+float generateFloat(float lower, float upper)
 {
-    sensor data;
+    float num = ((float)rand() / RAND_MAX) * (float)(upper);
+    return num;
+}
+
+sensorData generateData()
+{
+    sensorData data;
     data.MOISTURE = generate(1, 10);
-    data.PH = generate(1, 10);
+    data.PH = generateFloat(1.0f, 10.0f);
     data.SUNLIGHT = generate(0, 2000);
     return data;
 }
-sensor* initialiseCollection(){
+sensor *initialiseCollection()
+{
     sensor *recSensData = (sensor *)malloc(sizeof(sensor));
-    recSensData->MOISTURE =0;
-    recSensData->PH =0;
-    recSensData->SUNLIGHT=0;
+    recSensData->MOISTURE = 0;
+    recSensData->PH = 0;
+    recSensData->SUNLIGHT = 0;
     return recSensData;
 }
-void updatestats(char* toReturn ,sensor*recSensData){
-    sprintf(toReturn,"PH:%d,MOISTURE:%d,SUNLIGHT:%d",recSensData->PH,recSensData->MOISTURE,recSensData->SUNLIGHT);
-    strcpy(recSensData->STATS,toReturn);
+void updatestats(char *toReturn, sensor *recSensData)
+{
+    sprintf(toReturn, "PH:%d,MOISTURE:%d,SUNLIGHT:%d", recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
+    strcpy(recSensData->STATS, toReturn);
 }
-void chat(int newsockfd, char *buffer)
-{ 
-     //generate a collection
-    sensor* recSensData=initialiseCollection();
-    bool reset =false;
-    char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE];
+void chat(int newsockfd, char buffer[])
+{
+    //generate a collection
+    sensor *recSensData = initialiseCollection();
+    char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE], path[50];
+  
     while (1)
-    {  
+    {
+        bool reset = false;
         memset(toWrite, 0, BUFFER_SIZE);
         memset(toReturn, 0, BUFFER_SIZE);
-
-        sensor data = generateData();
+        
+        sensorData data = generateData();
         //reading
         read(newsockfd, buffer, BUFFER_SIZE - 1);
         printf("Recieved - %s\n", buffer);
 
         if (strcmp(buffer, "RESET\n") == 0 || strcmp(buffer, "reset\n") == 0)
         {
-            reset = true;
-            recSensData=initialiseCollection();
-            strcpy(toReturn, "OK");
-            
-            #if defined (FULL)
-            //delete file
-             #endif
+            recSensData = initialiseCollection();
+            memset(path, 0, BUFFER_SIZE);
+           
+#if defined(DBGSERVER)
+            strcpy(path, "./bin/dbg/server.data");
+#endif
+#if defined(SERVER)
+            strcpy(path, "./bin/rel/server.data");
+#endif
+            printf("%s path\n",path);
+            if (removeFile(path) && !reset)
+            {
+                sprintf(toReturn, "%s", "OK");
+                reset = true;
+            }
+            else
+            {
+                sprintf(toReturn, "%s", "Not removed !");
+            }
         }
         else if (strcmp(buffer, "PH\n") == 0 || strcmp(buffer, "ph\n") == 0)
         {
-            sprintf(toReturn, "%d", data.PH);
-            recSensData->PH +=1;
-            updatestats(toReturn,recSensData);
+            sprintf(toReturn, "%.2f", data.PH);
+            recSensData->PH += 1;
         }
         else if (strcmp(buffer, "MOISTURE\n") == 0 || strcmp(buffer, "moisture\n") == 0)
         {
             sprintf(toReturn, "%d", data.MOISTURE);
-            recSensData->MOISTURE+=1;
-            updatestats(toReturn,recSensData);
+            recSensData->MOISTURE += 1;
         }
         else if (strcmp(buffer, "SUNLIGHT\n") == 0 || strcmp(buffer, "sunlight\n") == 0)
         {
             sprintf(toReturn, "%d", data.SUNLIGHT);
-            recSensData->SUNLIGHT+=1;
-            updatestats(toReturn,recSensData);
+            recSensData->SUNLIGHT += 1;
         }
         else if (strcmp(buffer, "STATS\n") == 0 || strcmp(buffer, "stats\n") == 0)
-        {  
-            updatestats(toReturn,recSensData);
-            printf("%s",recSensData->STATS);
+        {
+            updatestats(toReturn, recSensData);
+            printf("%s", recSensData->STATS);
         }
-        else{
-            sprintf(toReturn,"UNKNOWN");
+        else
+        {
+            sprintf(toReturn, "UNKNOWN");
         }
+
+        // //add sensor to list
+        // if (!reset)
+        // {
+        //     //add_sensor_at_end(recSensData);
+        // }
+
+        //writing to client
         strcpy(toWrite, toReturn);
         printf("Echoing back - %s\n", toWrite);
-        //writing
         write(newsockfd, toWrite, strlen(toWrite) + 1);
-        // //add sensor to list
-        // if(!reset){
-        //     add_sensor_at_end(recSensData);
-        // }
-        
-        //writing to file 
-        if(strcmp(toReturn,"UNKNOWN") != 0){
+        //writing to file
+        if (strcmp(toReturn, "UNKNOWN") != 0 && !reset)
+        {
             time_t timeStamp = time(NULL);
-            char* timeString = ctime(&timeStamp);
-            char toFile [BUFFER_SIZE];
+            char *timeString = ctime(&timeStamp);
+            char toFile[BUFFER_SIZE];
             memset(toFile, 0, BUFFER_SIZE);
-            sprintf(toFile,"%s : PH: %d Moisture %d Sunlight %d Stats %s",timeString,recSensData->PH,recSensData->MOISTURE,recSensData->SUNLIGHT,recSensData->STATS);
-            writeFile('s',toFile);
-            printf("\nWriting to file...");
-            printf("\nFile updated");
+            sprintf(toFile, "%s : PH: %d Moisture %d Sunlight %d Stats %s", timeString, recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT, recSensData->STATS);
+            writeFile('s', toFile);
+            printf("Writing to file...\n");
+            printf("File updated\n");
         }
-        
+
         // if message contains exit.
         if (strncmp("exit", buffer, 4) == 0)
         {
             printf("Client Exiting...\n");
             break;
         }
-          //free collections
-      
     }
-      free(recSensData);
+    free(recSensData);
 }
 int main(int argc, char const *argv[])
 {
     int sockfd, newsockfd;
     char buffer[BUFFER_SIZE];
-    
-
+    memset(buffer, 0, BUFFER_SIZE);
     struct sockaddr_in serv_addr;
     //create a socket
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -146,7 +164,7 @@ int main(int argc, char const *argv[])
     int so_reuse_enabled = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &so_reuse_enabled, sizeof(int)) < 0)
     {
-        fprintf(stderr, "Reusing of socket failed");
+        fprintf(stderr, "Reusing of socket failed\n");
         return -2;
     }
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)

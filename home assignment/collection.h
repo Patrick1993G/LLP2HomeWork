@@ -9,6 +9,12 @@ typedef struct SENSORS
     struct SENSORS* next;
 } sensor;
 
+typedef struct SENSORDATA
+{
+    int MOISTURE;
+    float PH;
+    int SUNLIGHT;
+} sensorData;
 
 /* Head of the list. NULL means empty list (start)*/
 sensor *list_head = NULL;

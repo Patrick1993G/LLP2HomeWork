@@ -6,13 +6,24 @@ FILE *openFile(char *path, char *symbol)
     FILE *fp = fopen(path, symbol);
     if (fp == NULL)
     {
-        fprintf(stderr, "\nCan't open input file!\n");
+        fprintf(stderr, "Can't open input file!\n");
     }
     else
     {
-        fprintf(stdout, "\nSuccessfully opened file!\n");
+        fprintf(stdout, "Successfully opened file!\n");
     }
     return fp;
+}
+//Remove file 
+bool removeFile(char path [50]){
+    
+    if(remove(path) == 0){
+        printf("All values are cleared\n");
+        return true;
+    }else{
+        printf("File could not be deleted!\n");
+        return false;
+    } 
 }
 //Writing
 void writeToFile(char *path, char *toWrite)
@@ -32,7 +43,7 @@ void writeFile(char whereTo, char *toWrite)
     {
     case 'c':
 /* To client*/
-#if defined(DBG)
+#if defined(DBGCLIENT)
         strcpy(path, "./bin/dbg/log.txt");
 #else
         strcpy(path, "./bin/rel/log.txt");
@@ -49,6 +60,7 @@ void writeFile(char whereTo, char *toWrite)
         writeToFile(path, toWrite);
         break;
     default:
+        printf("can not Write to file!\n");
         break;
     }
 }
