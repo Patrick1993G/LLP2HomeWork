@@ -3,6 +3,7 @@
 //opening a file
 FILE *openFile(char *path, char *symbol)
 {
+  
     FILE *fp = fopen(path, symbol);
     if (fp == NULL)
     {
@@ -14,20 +15,24 @@ FILE *openFile(char *path, char *symbol)
     }
     return fp;
 }
-//Remove file 
-bool removeFile(char path [50]){
-    
-    if(remove(path) == 0){
+//Remove file
+bool removeFile(char path[50])
+{
+
+    if (remove(path) == 0)
+    {
         printf("All values are cleared\n");
         return true;
-    }else{
+    }
+    else
+    {
         printf("File could not be deleted!\n");
         return false;
-    } 
+    }
 }
 //Writing
 void writeToFile(char *path, char *toWrite)
-{
+{  printf("%s",path);
     FILE *fp = openFile(path, "a");
     if (fp != NULL)
     {
@@ -35,20 +40,15 @@ void writeToFile(char *path, char *toWrite)
         fclose(fp);
     }
 }
-void writeFile(char whereTo, char *toWrite)
+void writeFile(char whereTo, char *toWrite, char *clientPath)
 {
     char path[50];
     memset(path, 0, 50);
     switch (whereTo)
     {
     case 'c':
-/* To client*/
-#if defined(DBGCLIENT)
-        strcpy(path, "./bin/dbg/log.txt");
-#else
-        strcpy(path, "./bin/rel/log.txt");
-#endif
-        writeToFile(path, toWrite);
+        /* To client*/
+        writeToFile(clientPath, toWrite);
         break;
     case 's':
         /*To server*/

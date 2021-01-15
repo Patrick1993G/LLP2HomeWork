@@ -8,41 +8,49 @@
 #include <time.h>
 #include "files.h"
 #define BUFFER_SIZE 1024
+#define NAME_SIZE 100
 #define HTTP_PORT 44444
 #define MSG "Connected to client!"
 
-void sendTofile(char*sendBuffer,char*recvBuffer){
-     //get time
+void sendTofile(char *sendBuffer, char *recvBuffer,char *fileName)
+{
+    //get time
     time_t timeStamp = time(NULL);
-    char* timeString = ctime(&timeStamp);
-    char toFile [BUFFER_SIZE];
+    char *timeString = ctime(&timeStamp);
+    char toFile[BUFFER_SIZE];
     memset(toFile, 0, BUFFER_SIZE);
-    sprintf(toFile,"%s : %s --> %s",timeString,sendBuffer,recvBuffer);
-    writeFile('c',toFile);
+    sprintf(toFile, "%s : %s --> %s", timeString, sendBuffer, recvBuffer);
+    writeFile('c', toFile,fileName);
     printf("Writing to file...\n");
     printf("File updated\n");
 }
 
 //describes the values recieved by the server
-void describe(char *recvBuffer, char *sendBuffer)
-{   char path [50];
+void describe(char *recvBuffer, char *sendBuffer, char *filename)
+{
+    char path[50];
     memset(path, 0, 50);
     bool reset = false;
     if (strcmp(sendBuffer, "RESET\n") == 0 || strcmp(sendBuffer, "reset\n") == 0)
-    {   
-        #if defined(DBGCLIENT)
-            strcpy(path,"./bin/dbg/log.txt");
-        #endif
-        #if defined(FULL)
-            strcpy(path,"./bin/rel/log.txt");
-        #endif
+    { 
+        char fIlePath[50];
+        memset(fIlePath, 0, 50);
+#if defined(DBGCLIENT)
+        strcpy(fIlePath,"./bin/dbg/");
+        sprintf(path,"%s%s",fIlePath,filename);
+#endif
+#if defined(FULL)
+         strcpy(fIlePath,"./bin/rel/");
+        sprintf(path,"%s%s",fIlePath,filename);
+#endif
         printf("Sent reset to server ! waiting for reply...\n");
-        if(strcmp(recvBuffer, "OK") == 0){ // if server file was deleted
-            if(removeFile(path)){
+        if (strcmp(recvBuffer, "OK") == 0)
+        { // if server file was deleted
+            if (removeFile(path))
+            {
                 reset = true;
             }
         }
-        
     }
     else if (strcmp(sendBuffer, "PH\n") == 0 || strcmp(sendBuffer, "ph\n") == 0)
     {
@@ -62,12 +70,13 @@ void describe(char *recvBuffer, char *sendBuffer)
         {
             printf("PH level is %s : it is slightly alkaline\n", recvBuffer);
         }
-        else if(atoi(recvBuffer) > 11 && atoi(recvBuffer) <= 14)
+        else if (atoi(recvBuffer) > 11 && atoi(recvBuffer) <= 14)
         {
             printf("PH level is %s : it is strongly alkaline\n", recvBuffer);
         }
-        else if(atoi(recvBuffer) <= 0 ){
-              printf("PH level is %s : it is pure acid!\n", recvBuffer);
+        else if (atoi(recvBuffer) <= 0)
+        {
+            printf("PH level is %s : it is pure acid!\n", recvBuffer);
         }
     }
     else if (strcmp(sendBuffer, "MOISTURE\n") == 0 || strcmp(sendBuffer, "moisture\n") == 0)
@@ -97,23 +106,23 @@ void describe(char *recvBuffer, char *sendBuffer)
             printf("Sunlight level is %s : it is moderately bright", recvBuffer);
     }
     else if (strcmp(sendBuffer, "STATS\n") == 0 || strcmp(sendBuffer, "stats\n") == 0)
-    {   
+    {
         printf("%s Number of calls recorded for each command since last reset\n", recvBuffer);
     }
     else
     {
         printf("Unknown command\n");
     }
-    if(!reset){
-        //writing to file if FULL is defined
-        #if defined (DBGCLIENT)
-            sendTofile(sendBuffer,recvBuffer);
-        #endif
-        #if defined (FULL)
-            sendTofile(sendBuffer,recvBuffer);
-        #endif
+    if (!reset)
+    {
+//writing to file if FULL is defined
+#if defined(DBGCLIENT)
+        sendTofile(sendBuffer, recvBuffer,path);
+#endif
+#if defined(FULL)
+        sendTofile(sendBuffer, recvBuffer,path);
+#endif
     }
-    
 }
 
 int main(int argc, char const *argv[])
@@ -121,17 +130,22 @@ int main(int argc, char const *argv[])
     int sockfd = 0;
     char sendBuffer[BUFFER_SIZE], recvBuffer[BUFFER_SIZE];
     struct sockaddr_in serv_addr;
-
+    char fileName[NAME_SIZE];
     if (argc == 1)
     {
-        printf("No arguments supplied\n");
+        printf("No arguments supplied, Default file name is used !\n");
+        //write to file with default file name
+        strcpy(fileName,"log.txt");
     }
     else
-    {
+    {   // write to file with the user's file name
+        memset(fileName, 0, NAME_SIZE);
         for (int i = 1; i < argc; i++)
         {
             printf("argv[%d] = %s\n", i, argv[i]);
+            strcpy(fileName,argv[i]);
         }
+        printf("Using User's file name : %s",fileName);
     }
     /* Create a socket */
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -173,7 +187,7 @@ int main(int argc, char const *argv[])
         }
 
         //PASS to Descriptive method to describe the values
-        describe(recvBuffer, sendBuffer);
+        describe(recvBuffer, sendBuffer,fileName);
     } while (1);
 
     close(sockfd); // close connections

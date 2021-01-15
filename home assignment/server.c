@@ -128,7 +128,7 @@ void chat(int newsockfd, char buffer[])
             char toFile[BUFFER_SIZE];
             memset(toFile, 0, BUFFER_SIZE);
             sprintf(toFile, "%s : PH: %d Moisture %d Sunlight %d Stats %s", timeString, recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT, recSensData->STATS);
-            writeFile('s', toFile);
+            writeFile('s', toFile,NULL);
             printf("Writing to file...\n");
             printf("File updated\n");
         }
