@@ -3,8 +3,9 @@
 //opening a file
 FILE *openFile(char *path, char *symbol)
 {
-  
-    FILE *fp = fopen(path, symbol);
+    FILE *fp;
+    fp = fopen(path, symbol);
+    printf("path to file %s\n", path);
     if (fp == NULL)
     {
         fprintf(stderr, "Can't open input file!\n");
@@ -16,7 +17,7 @@ FILE *openFile(char *path, char *symbol)
     return fp;
 }
 //Remove file
-bool removeFile(char path[50])
+bool removeFile(char *path)
 {
 
     if (remove(path) == 0)
@@ -31,46 +32,52 @@ bool removeFile(char path[50])
     }
 }
 //Writing
-void writeToFile(char *path, char *toWrite)
-{  printf("%s",path);
-    FILE *fp = openFile(path, "a");
+void writeToFile(char *path, char *toWrite,char *symbol)
+{
+    FILE *fp;
+    fp = openFile(path, symbol);
+    printf("%s\n", path);
+    printf("%s\n", toWrite);
+
     if (fp != NULL)
     {
         fprintf(fp, "%s\n", toWrite);
+        printf("File updated\n");
         fclose(fp);
+    }
+    else
+    {
+        perror("Error");
     }
 }
 void writeFile(char whereTo, char *toWrite, char *clientPath)
 {
-    char path[50];
-    memset(path, 0, 50);
+    char *path = (char *)malloc(sizeof(char) * 50);
+    if (path == NULL)
+    {
+        fprintf(stderr, "error !\n");
+    }
+    printf("Writing to file...\n");
     switch (whereTo)
     {
     case 'c':
         /* To client*/
-        writeToFile(clientPath, toWrite);
+        writeToFile(clientPath, toWrite,"a");
         break;
     case 's':
-        /*To server*/
-#if defined(DBGSERVER)
-        strcpy(path, "./bin/dbg/server.data");
-#else
-        strcpy(path, "./bin/rel/server.data");
-#endif
-        writeToFile(path, toWrite);
+        strcpy(path, "./server.data");
+        writeToFile(path, toWrite,"w");
         break;
     default:
         printf("can not Write to file!\n");
         break;
     }
+    free(path);
+    path = NULL;
 }
 //Reading
-void readFile(char *path)
+void readFile(char *path, sensor *recSensData)
 {
-    int MOISTURE;
-    int PH;
-    int SUNLIGHT;
-    char STATS[200];
     FILE *fp = openFile(path, "r");
     if (fp != NULL)
     {
@@ -78,12 +85,19 @@ void readFile(char *path)
         while (!feof(fp))
         {
             //reading...
-            if (fscanf(fp, "%d %d %d %s", &MOISTURE, &PH, &SUNLIGHT, STATS) != 4)
+            if (fscanf(fp, "%d %d %d ", &recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 3)
+            {
+                printf("error reading file!");
                 break; //file format mismatch
-            printf("\nRead: %d\t%d\n%d\t%s", MOISTURE, PH, SUNLIGHT, STATS);
+            }
         }
+        printf("Data filled from file !");
         //close file
         fclose(fp);
+    }
+    else
+    {
+        fprintf(stderr, "There is nothing in the file!\n");
     }
 }
 

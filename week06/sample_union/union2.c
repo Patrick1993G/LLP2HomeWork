@@ -21,6 +21,7 @@ int main()
 	printf("my_data.string : %s\n", my_data.string);
 
 	// Proper usage
+
 	my_data.whole_num = 221;
 	printf("my_data.whole_num : %d\n", my_data.whole_num);
 	my_data.floating_point = 101.5;

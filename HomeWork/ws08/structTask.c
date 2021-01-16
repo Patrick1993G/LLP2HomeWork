@@ -72,32 +72,22 @@ int main  (int argc, char** argv)
     {
         int x = generate(rand(),i+rand());
         int y = generate(rand(),i+rand());
-        point *p= (point*)malloc(sizeof(point));
-        char name [20]= "point";
-        char str[20];
-        
-        sprintf(str,"%d",i);
-        strcat(name,str);
-        strcpy(p->name, name);
-        p->xcoord = x;
-        p->ycoord = y;
-        
-        *(points+i) = *p;
-        printf("%s",name);
+        (points+i)->xcoord = x;
+        (points+i)->ycoord = y;
+        sprintf((points+i)->name,"Point %d",i);
+        printf("%s",(points+i)->name);
         printf("|%d |",x);
         printf("%d \n",y);
         //check if it is in a rectangle
-        bool areEqual = contains(rec1,p);
+        bool areEqual = contains(rec1,(points+i));
         if(areEqual){
             rectangleCount+=1;
         }
         
-        free(p);
     }
     int percentage= (float)rectangleCount/numOfPoints * 100.0;
     printf("number of points in rectangle = %d\n",rectangleCount);
     printf("number of points in percentage = %d%%",percentage);
-    free(points);
     free(rec1);
     return 0;
 }

@@ -5,53 +5,21 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
-#include <time.h>
 #include "collection.h"
 #include "files.h"
-
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
 
-int generate(int lower, int upper)
-{
-    srand((unsigned)time(NULL));
-    int num = (rand() % (upper - lower + 1)) + lower;
-    return num;
-}
 
-float generateFloat(float lower, float upper)
-{
-    float num = ((float)rand() / RAND_MAX) * (float)(upper);
-    return num;
-}
 
-sensorData generateData()
-{
-    sensorData data;
-    data.MOISTURE = generate(1, 10);
-    data.PH = generateFloat(1.0f, 10.0f);
-    data.SUNLIGHT = generate(0, 2000);
-    return data;
-}
-sensor *initialiseCollection()
-{
-    sensor *recSensData = (sensor *)malloc(sizeof(sensor));
-    recSensData->MOISTURE = 0;
-    recSensData->PH = 0;
-    recSensData->SUNLIGHT = 0;
-    return recSensData;
-}
-void updatestats(char *toReturn, sensor *recSensData)
-{
-    sprintf(toReturn, "PH:%d,MOISTURE:%d,SUNLIGHT:%d", recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
-    strcpy(recSensData->STATS, toReturn);
-}
 void chat(int newsockfd, char buffer[])
 {
     //generate a collection
     sensor *recSensData = initialiseCollection();
-    char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE], path[50];
-  
+    char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE];
+  //add sensor to list
+    char path[14]="./server.data";
+    readFile(path,recSensData);
     while (1)
     {
         bool reset = false;
@@ -65,16 +33,9 @@ void chat(int newsockfd, char buffer[])
 
         if (strcmp(buffer, "RESET\n") == 0 || strcmp(buffer, "reset\n") == 0)
         {
+            
             recSensData = initialiseCollection();
-            memset(path, 0, BUFFER_SIZE);
-           
-#if defined(DBGSERVER)
-            strcpy(path, "./bin/dbg/server.data");
-#endif
-#if defined(SERVER)
-            strcpy(path, "./bin/rel/server.data");
-#endif
-            printf("%s path\n",path);
+
             if (removeFile(path) && !reset)
             {
                 sprintf(toReturn, "%s", "OK");
@@ -102,20 +63,14 @@ void chat(int newsockfd, char buffer[])
         }
         else if (strcmp(buffer, "STATS\n") == 0 || strcmp(buffer, "stats\n") == 0)
         {
-            updatestats(toReturn, recSensData);
-            printf("%s", recSensData->STATS);
+            sprintf(toReturn, "PH:%d,MOISTURE:%d,SUNLIGHT:%d", recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
         }
         else
         {
             sprintf(toReturn, "UNKNOWN");
         }
 
-        // //add sensor to list
-        // if (!reset)
-        // {
-        //     //add_sensor_at_end(recSensData);
-        // }
-
+        
         //writing to client
         strcpy(toWrite, toReturn);
         printf("Echoing back - %s\n", toWrite);
@@ -123,14 +78,11 @@ void chat(int newsockfd, char buffer[])
         //writing to file
         if (strcmp(toReturn, "UNKNOWN") != 0 && !reset)
         {
-            time_t timeStamp = time(NULL);
-            char *timeString = ctime(&timeStamp);
             char toFile[BUFFER_SIZE];
             memset(toFile, 0, BUFFER_SIZE);
-            sprintf(toFile, "%s : PH: %d Moisture %d Sunlight %d Stats %s", timeString, recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT, recSensData->STATS);
+            sprintf(toFile, "%d %d %d ",
+            recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
             writeFile('s', toFile,NULL);
-            printf("Writing to file...\n");
-            printf("File updated\n");
         }
 
         // if message contains exit.
@@ -140,7 +92,7 @@ void chat(int newsockfd, char buffer[])
             break;
         }
     }
-    free(recSensData);
+   free(recSensData);
 }
 int main(int argc, char const *argv[])
 {
@@ -173,7 +125,7 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "Error code: %s\n", strerror(errno));
         return 2;
     }
-    printf("Listening for a client...\n");
+
     if (listen(sockfd, 10) < 0)
     {
         fprintf(stderr, "ERROR: listen() failed\n");
@@ -182,7 +134,7 @@ int main(int argc, char const *argv[])
     }
 
     for (;;)
-    {
+    {   printf("Listening for a client...\n");
         newsockfd = accept(sockfd, (struct sockaddr *)NULL, NULL);
         if (newsockfd != -1)
         {
@@ -191,6 +143,7 @@ int main(int argc, char const *argv[])
         }
         else
         {
+            char *toWrite = "serverExit";
             fprintf(stderr, "ERROR: connection failed\n");
             fprintf(stderr, "Error code: %s\n", strerror(errno));
             return -5;

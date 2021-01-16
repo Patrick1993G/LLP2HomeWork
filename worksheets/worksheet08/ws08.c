@@ -18,7 +18,7 @@ person *list_head = NULL;
 
 /* Retrieves the list head record or NULL if list is empty */
 person* get_list_head() {
-    return list_head;
+        return list_head;
 }
 
 /* Set first element of the list */
@@ -34,15 +34,25 @@ void set_list_head(person* new_head) {
 
 /* Finds the last allocation entry in list, or returns NULL if list is empty */
 person* find_last() {
+   
     return NULL;
 }
 
 /* Add a person to the end of the list */
 void add_person_at_end(person* new_person) {
+    person *current = new_person;
+
+    while(current->next != NULL){
+        current = current->next;
+    }
+    current->next = (person*)malloc(sizeof(person));
+    current->next = new_person->next;
+    current->next->next = NULL;
 }
 
 /* Prints a string representation of a person */
 void print_person(person* p) {
+    printf("Name = %s, Surname = %s, Address = %s, YOB = %d",p->name,p->surname,p->address,p->yob);
 }
 
 /* Returns a pointer to the person at the specified index or NULL if nothing is there */
@@ -67,6 +77,9 @@ void free_list() {
 /* Calculate the total number of persons in the list */
 int count_list_size() {
     int total = 0;
+    // while(){
+
+    // }
     return total;
 }
 
@@ -102,34 +115,36 @@ void generate_persons(int amount) {
         strcpy(p->address, "unknown");
         p->yob = 2000+i;
         add_person_at_end(p);
+        print_person(p);
+        getchar();
     }
 }
 
 int main (int argc, char *argv[]) {
-    /*
+    
     //confirm that the list is empty when we start
-    assert (count_list_size() == 0);
+   // assert (count_list_size() == 0);
 
     //generate 10 persons and check that the count is 10
     generate_persons(10);
-    assert (count_list_size() == 10);
+   // assert (count_list_size() == 10);
 
     //confirm that there is a person at index 0 and 9
-    assert (get_person_at_index(0) != NULL);
-    assert (get_person_at_index(9) != NULL);
+   // assert (get_person_at_index(0) != NULL);
+   // assert (get_person_at_index(9) != NULL);
 
     //get the last person (index 9) and confirm yob
-    person *last = get_person_at_index(9);
-    assert (last->yob == 2009);
+   // person *last = get_person_at_index(9);
+   // assert (last->yob == 2009);
 
     //remove last person and confirm it was successful
-    assert (remove_person_at_index(9) == true);
-    assert (count_list_size() == 9);
+   // assert (remove_person_at_index(9) == true);
+   // assert (count_list_size() == 9);
 
     //free list and confirm count is zero
-    free_list();
-    assert (count_list_size() == 0);
-    */
+   // free_list();
+   // assert (count_list_size() == 0);
+    
     
     return 0;
 }

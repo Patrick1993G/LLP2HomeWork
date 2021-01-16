@@ -1,18 +1,18 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include "collection.h"
-#include <time.h>
 #include "files.h"
 #define BUFFER_SIZE 1024
 #define NAME_SIZE 100
 #define HTTP_PORT 44444
 #define MSG "Connected to client!"
 
-void sendTofile(char *sendBuffer, char *recvBuffer,char *fileName)
+void sendTofile(char *sendBuffer, char *recvBuffer, char *fileName)
 {
     //get time
     time_t timeStamp = time(NULL);
@@ -20,29 +20,25 @@ void sendTofile(char *sendBuffer, char *recvBuffer,char *fileName)
     char toFile[BUFFER_SIZE];
     memset(toFile, 0, BUFFER_SIZE);
     sprintf(toFile, "%s : %s --> %s", timeString, sendBuffer, recvBuffer);
-    writeFile('c', toFile,fileName);
-    printf("Writing to file...\n");
-    printf("File updated\n");
+    printf("path to file %s\n", fileName);
+    writeFile('c', toFile, fileName);
 }
 
 //describes the values recieved by the server
 void describe(char *recvBuffer, char *sendBuffer, char *filename)
 {
-    char path[50];
-    memset(path, 0, 50);
+    char *path = (char *)malloc(sizeof(char) * 50);
+    if (path == NULL)
+    {
+        fprintf(stderr, "error !\n");
+    }
+#if defined(DBGCLIENT) || defined(FULL)
+
+    sprintf(path, "./%s", filename);
+#endif
     bool reset = false;
     if (strcmp(sendBuffer, "RESET\n") == 0 || strcmp(sendBuffer, "reset\n") == 0)
-    { 
-        char fIlePath[50];
-        memset(fIlePath, 0, 50);
-#if defined(DBGCLIENT)
-        strcpy(fIlePath,"./bin/dbg/");
-        sprintf(path,"%s%s",fIlePath,filename);
-#endif
-#if defined(FULL)
-         strcpy(fIlePath,"./bin/rel/");
-        sprintf(path,"%s%s",fIlePath,filename);
-#endif
+    {
         printf("Sent reset to server ! waiting for reply...\n");
         if (strcmp(recvBuffer, "OK") == 0)
         { // if server file was deleted
@@ -113,16 +109,15 @@ void describe(char *recvBuffer, char *sendBuffer, char *filename)
     {
         printf("Unknown command\n");
     }
-    if (!reset)
+    if (reset == false)
     {
 //writing to file if FULL is defined
-#if defined(DBGCLIENT)
-        sendTofile(sendBuffer, recvBuffer,path);
-#endif
-#if defined(FULL)
-        sendTofile(sendBuffer, recvBuffer,path);
+#if defined(DBGCLIENT) || defined(FULL)
+        sendTofile(sendBuffer, recvBuffer, path);
 #endif
     }
+    free(path);
+    path = NULL;
 }
 
 int main(int argc, char const *argv[])
@@ -130,23 +125,26 @@ int main(int argc, char const *argv[])
     int sockfd = 0;
     char sendBuffer[BUFFER_SIZE], recvBuffer[BUFFER_SIZE];
     struct sockaddr_in serv_addr;
+
+#if defined(DBGCLIENT) || defined(FULL)
     char fileName[NAME_SIZE];
+    memset(fileName, 0, NAME_SIZE);
     if (argc == 1)
     {
         printf("No arguments supplied, Default file name is used !\n");
         //write to file with default file name
-        strcpy(fileName,"log.txt");
+        strcpy(fileName, "log.txt");
     }
     else
-    {   // write to file with the user's file name
-        memset(fileName, 0, NAME_SIZE);
+    { // write to file with the user's file name
+
         for (int i = 1; i < argc; i++)
         {
-            printf("argv[%d] = %s\n", i, argv[i]);
-            strcpy(fileName,argv[i]);
+            strcpy(fileName, argv[i]);
         }
-        printf("Using User's file name : %s",fileName);
+        printf("Using User's file name : %s", fileName);
     }
+#endif
     /* Create a socket */
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd < 0)
@@ -166,15 +164,18 @@ int main(int argc, char const *argv[])
         printf("ERROR: connecting failed !\n");
         return -2;
     }
-
+    bool on = true;
     do
     {
+        
+        signal(SIGINT, SIG_IGN);
         memset(sendBuffer, 0, BUFFER_SIZE);
         memset(recvBuffer, 0, BUFFER_SIZE);
         //recieve
         printf(" \nEnter your request:");
 
         fgets(sendBuffer, BUFFER_SIZE - 1, stdin);
+        
         if (write(sockfd, sendBuffer, strlen(sendBuffer) + 1) < 0)
         {
             fprintf(stderr, "write to buffer failed\n");
@@ -182,13 +183,22 @@ int main(int argc, char const *argv[])
         }
         if (read(sockfd, recvBuffer, BUFFER_SIZE - 1) < 0)
         {
+         
             fprintf(stderr, "reading from buffer failed\n");
             return -4;
         }
+        //exit client 
+        if (strcmp(sendBuffer, "EXIT\n") == 0 || strcmp(sendBuffer, "exit\n") == 0){
+            on = false;
+        }
 
-        //PASS to Descriptive method to describe the values
-        describe(recvBuffer, sendBuffer,fileName);
-    } while (1);
+//PASS to Descriptive method to describe the values
+#if defined(DBGCLIENT) || defined(FULL)
+        describe(recvBuffer, sendBuffer, fileName);
+#else
+        describe(recvBuffer, sendBuffer, NULL);
+#endif
+    } while (on);
 
     close(sockfd); // close connections
     return 0;
