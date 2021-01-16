@@ -32,10 +32,10 @@ bool removeFile(char *path)
     }
 }
 //Writing
-void writeToFile(char *path, char *toWrite)
+void writeToFile(char *path, char *toWrite,char *symbol)
 {
     FILE *fp;
-    fp = openFile(path, "a");
+    fp = openFile(path, symbol);
     printf("%s\n", path);
     printf("%s\n", toWrite);
 
@@ -62,12 +62,11 @@ void writeFile(char whereTo, char *toWrite, char *clientPath)
     {
     case 'c':
         /* To client*/
-        writeToFile(clientPath, toWrite);
-        printf("client path %s", clientPath);
+        writeToFile(clientPath, toWrite,"a");
         break;
     case 's':
         strcpy(path, "./server.data");
-        writeToFile(path, toWrite);
+        writeToFile(path, toWrite,"w");
         break;
     default:
         printf("can not Write to file!\n");
@@ -86,14 +85,11 @@ void readFile(char *path, sensor *recSensData)
         while (!feof(fp))
         {
             //reading...
-            if (fscanf(fp, "%d %d %d ", &recSensData->MOISTURE, &recSensData->PH, &recSensData->SUNLIGHT) != 3)
+            if (fscanf(fp, "%d %d %d ", &recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 3)
             {
                 printf("error reading file!");
                 break; //file format mismatch
             }
-
-            printf("\nReading: %d\t%d\n%d", recSensData->MOISTURE, recSensData->PH, recSensData->SUNLIGHT);
-            add_sensor_at_end(recSensData);
         }
         printf("Data filled from file !");
         //close file

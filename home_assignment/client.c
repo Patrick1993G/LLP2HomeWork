@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include "collection.h"
-#include <time.h>
 #include "files.h"
 #define BUFFER_SIZE 1024
 #define NAME_SIZE 100
@@ -164,15 +164,18 @@ int main(int argc, char const *argv[])
         printf("ERROR: connecting failed !\n");
         return -2;
     }
-
+    bool on = true;
     do
     {
+        
+        signal(SIGINT, SIG_IGN);
         memset(sendBuffer, 0, BUFFER_SIZE);
         memset(recvBuffer, 0, BUFFER_SIZE);
         //recieve
         printf(" \nEnter your request:");
 
         fgets(sendBuffer, BUFFER_SIZE - 1, stdin);
+        
         if (write(sockfd, sendBuffer, strlen(sendBuffer) + 1) < 0)
         {
             fprintf(stderr, "write to buffer failed\n");
@@ -180,8 +183,13 @@ int main(int argc, char const *argv[])
         }
         if (read(sockfd, recvBuffer, BUFFER_SIZE - 1) < 0)
         {
+         
             fprintf(stderr, "reading from buffer failed\n");
             return -4;
+        }
+        //exit client 
+        if (strcmp(sendBuffer, "EXIT\n") == 0 || strcmp(sendBuffer, "exit\n") == 0){
+            on = false;
         }
 
 //PASS to Descriptive method to describe the values
@@ -190,7 +198,7 @@ int main(int argc, char const *argv[])
 #else
         describe(recvBuffer, sendBuffer, NULL);
 #endif
-    } while (1);
+    } while (on);
 
     close(sockfd); // close connections
     return 0;

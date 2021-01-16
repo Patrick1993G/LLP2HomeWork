@@ -25,3 +25,54 @@ Sat Jan 16 16:56:48 2021
 Sat Jan 16 16:57:28 2021
  : stats
  --> PH:4,MOISTURE:2,SUNLIGHT:1
+Sat Jan 16 17:13:53 2021
+ : 
+ --> UNKNOWN
+Sat Jan 16 17:13:55 2021
+ : 
+ --> UNKNOWN
+Sat Jan 16 17:13:56 2021
+ : 
+ --> UNKNOWN
+Sat Jan 16 17:14:02 2021
+ : exit
+ --> UNKNOWN
+Sat Jan 16 17:21:09 2021
+ : stats
+ --> PH:4,MOISTURE:2,SUNLIGHT:1
+Sat Jan 16 17:21:13 2021
+ : exit
+ --> UNKNOWN
+Sat Jan 16 17:21:37 2021
+ : stats
+ --> PH:4,MOISTURE:2,SUNLIGHT:1
+Sat Jan 16 17:21:41 2021
+ : exit
+ --> UNKNOWN
+Sat Jan 16 17:56:43 2021
+ : ph
+ --> 
+Sat Jan 16 17:57:06 2021
+ : stats
+ --> PH:4,MOISTURE:2,SUNLIGHT:1
+Sat Jan 16 17:58:13 2021
+ : 
+ --> 
+Sat Jan 16 17:58:20 2021
+ : exit
+ --> UNKNOWN
+Sat Jan 16 17:58:32 2021
+ : 
+ --> UNKNOWN
+Sat Jan 16 17:58:36 2021
+ : exit
+ --> UNKNOWN
+Sat Jan 16 18:03:10 2021
+ : stats
+ --> PH:4,MOISTURE:2,SUNLIGHT:1
+Sat Jan 16 18:03:33 2021
+ : exit
+ --> 
+Sat Jan 16 18:03:37 2021
+ : exit
+ --> UNKNOWN
