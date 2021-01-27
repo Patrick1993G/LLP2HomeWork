@@ -1,9 +1,10 @@
-#ifndef collection
-#define collection
+#ifndef COLLECTION_H_INCLUDED
+#define COLLECTION_H_INCLUDED
 
 #include <time.h>
 typedef struct SENSORS
 {
+    unsigned int ID;
     unsigned int MOISTURE;
     unsigned int PH;
     unsigned int SUNLIGHT;
@@ -41,6 +42,7 @@ sensorData generateData()
 sensor *initialiseCollection()
 {
     sensor *recSensData = (sensor *)malloc(sizeof(sensor));
+    recSensData->ID =0;
     recSensData->MOISTURE = 0;
     recSensData->PH = 0;
     recSensData->SUNLIGHT = 0;

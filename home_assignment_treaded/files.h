@@ -1,5 +1,6 @@
-#ifndef files
-#define files
+#ifndef FILES_H_INCLUDED
+#define FILES_H_INCLUDED
+#include "threads.h"
 //opening a file
 FILE *openFile(char *path, char *symbol)
 {
@@ -66,7 +67,11 @@ void writeFile(char whereTo, char *toWrite, char *clientPath)
         break;
     case 's':
         strcpy(path, "./server.data");
-        writeToFile(path, toWrite,"w");
+        //lock file
+        pthread_mutex_lock(&file_mutex);
+        writeToFile(path, toWrite,"a");
+        //unlock file
+        pthread_mutex_unlock(&file_mutex);
         break;
     default:
         printf("can not Write to file!\n");
@@ -85,7 +90,7 @@ void readFile(char *path, sensor *recSensData)
         while (!feof(fp))
         {
             //reading...
-            if (fscanf(fp, "%d %d %d ", &recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 3)
+            if (fscanf(fp, "%d %d %d %d ",&recSensData->ID,&recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 4)
             {
                 printf("error reading file!");
                 break; //file format mismatch

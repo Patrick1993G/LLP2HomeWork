@@ -5,19 +5,23 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include "pthread.h" // for threads
 #include "collection.h"
+
 #include "files.h"
+
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
 
 
 
-void chat(int newsockfd, char buffer[])
+void chat(int newsockfd, char buffer[],pthread_t thread_id)
 {
     //generate a collection
     sensor *recSensData = initialiseCollection();
+    recSensData->ID=thread_id;
     char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE];
-  //add sensor to list
+    //add sensor to list
     char path[14]="./server.data";
     readFile(path,recSensData);
     while (1)
@@ -28,7 +32,16 @@ void chat(int newsockfd, char buffer[])
         
         sensorData data = generateData();
         //reading
-        read(newsockfd, buffer, BUFFER_SIZE - 1);
+        int numOfBytes = read(newsockfd, buffer, BUFFER_SIZE - 1);
+        	if (numOfBytes == -1) {
+			fprintf(stderr, "Error: failed reading from client!\n");
+			break;
+		}
+		else if (numOfBytes == 0) {
+			printf("Client exited normally\n");
+			break;
+		}
+        else{
         printf("Recieved - %s\n", buffer);
 
         if (strcmp(buffer, "RESET\n") == 0 || strcmp(buffer, "reset\n") == 0)
@@ -70,7 +83,6 @@ void chat(int newsockfd, char buffer[])
             sprintf(toReturn, "UNKNOWN");
         }
 
-        
         //writing to client
         strcpy(toWrite, toReturn);
         printf("Echoing back - %s\n", toWrite);
@@ -80,8 +92,8 @@ void chat(int newsockfd, char buffer[])
         {
             char toFile[BUFFER_SIZE];
             memset(toFile, 0, BUFFER_SIZE);
-            sprintf(toFile, "%d %d %d ",
-            recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
+            sprintf(toFile, "%d %d %d %d ",
+            recSensData->ID,recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
             writeFile('s', toFile,NULL);
         }
 
@@ -92,14 +104,40 @@ void chat(int newsockfd, char buffer[])
             break;
         }
     }
+    }
+       
    free(recSensData);
+}
+//import #include "pthread.h"
+//include -lpthread in make file
+//create a method to recv and send after create thread 
+//handle shared resources with mutex 
+//check ws13
+void* clientHandler(void *sock){
+
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
+
+	int* newsockfd_ptr = (int*)sock;
+	int newsockfd = *newsockfd_ptr;
+	pthread_t thread_id = pthread_self();
+
+	printf("\nClient %lu using socket %x\n", (unsigned long)thread_id, newsockfd);
+
+	// Start chating
+    chat(newsockfd, buffer,(unsigned long)thread_id);
+    close(newsockfd);
+	return NULL;
 }
 int main(int argc, char const *argv[])
 {
-    int sockfd, newsockfd;
-    char buffer[BUFFER_SIZE];
-    memset(buffer, 0, BUFFER_SIZE);
-    struct sockaddr_in serv_addr;
+    int sockfd,thread_result;
+    struct sockaddr_in serv_addr,client_addr; // add client address 
+    socklen_t clientlen = sizeof(client_addr);//get the length of the client address
+    //create the thread structure
+    pthread_t thread;
+    //init the mutex lock for files
+    pthread_mutex_init(&file_mutex,NULL);
     //create a socket
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -108,47 +146,65 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "ERROR: Failed to open socket\n");
         return 1;
     }
+
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     serv_addr.sin_port = htons(HTTP_PORT);
+
     // allow to reuse the socket as soon as it stops being active */
     int so_reuse_enabled = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &so_reuse_enabled, sizeof(int)) < 0)
     {
         fprintf(stderr, "Reusing of socket failed\n");
-        return -2;
+        close(sockfd);
+        return 2;
     }
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         fprintf(stderr, "ERROR: bind() failed\n");
         fprintf(stderr, "Error code: %s\n", strerror(errno));
-        return 2;
+        close(sockfd);
+        return 3;
     }
-
-    if (listen(sockfd, 10) < 0)
+    printf("Listening for a client...\n");
+    if (listen(sockfd, 10) != 0) // max 10 clients
     {
         fprintf(stderr, "ERROR: listen() failed\n");
         fprintf(stderr, "Error code: %s\n", strerror(errno));
-        return 3;
+        close(sockfd);
+        return 4;
     }
 
     for (;;)
-    {   printf("Listening for a client...\n");
-        newsockfd = accept(sockfd, (struct sockaddr *)NULL, NULL);
-        if (newsockfd != -1)
+    {   
+       
+        int*comm = malloc(sizeof(int));
+        if(comm == NULL){
+            fprintf(stderr,"Error: while locating memory");
+            close(sockfd);
+        }
+        //alter the accept method for multiple client handling 
+        *comm = accept(sockfd, (struct sockaddr *)&client_addr, &clientlen);
+        if (*comm != -1)
         {
             printf("Accepted connection from client\n");
-            chat(newsockfd, buffer);
+            thread_result= pthread_create(&thread,NULL,clientHandler,comm);
+            if(thread_result != 0){
+                fprintf(stderr,"Error while creating thread \n");
+                free(comm);
+                return 5;
+            }
         }
         else
         {
-            char *toWrite = "serverExit";
             fprintf(stderr, "ERROR: connection failed\n");
             fprintf(stderr, "Error code: %s\n", strerror(errno));
-            return -5;
+            free(comm);
+            return 6;
         }
-        close(newsockfd); //close the temp socket
     }
+    //destroy lock
+    pthread_mutex_destroy(&file_mutex);
     close(sockfd);
 }
