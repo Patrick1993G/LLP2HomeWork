@@ -90,7 +90,7 @@ void readFile(char *path, sensor *recSensData)
         while (!feof(fp))
         {
             //reading...
-            if (fscanf(fp, "%d %d %d %d ",&recSensData->ID,&recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 4)
+            if (fscanf(fp, "%ld %d %d %d ",&recSensData->ID,&recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 4)
             {
                 printf("error reading file!");
                 break; //file format mismatch

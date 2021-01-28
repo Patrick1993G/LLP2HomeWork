@@ -7,37 +7,32 @@
 #include <stdbool.h>
 #include "pthread.h" // for threads
 #include "collection.h"
-
 #include "files.h"
-
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
 
-
-
-void chat(int newsockfd, char buffer[],pthread_t thread_id)
+void chat(int *newsockfd, char buffer[],client_thread*thread)
 {
-    //generate a collection
-    sensor *recSensData = initialiseCollection();
-    recSensData->ID=thread_id;
+    sensor *recSensData = thread->clientSensor;
     char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE];
     //add sensor to list
     char path[14]="./server.data";
     readFile(path,recSensData);
+    recSensData->ID=(unsigned long)thread->id;
     while (1)
     {
         bool reset = false;
         memset(toWrite, 0, BUFFER_SIZE);
         memset(toReturn, 0, BUFFER_SIZE);
-        
+        printf("newsock in chat %d\n",*newsockfd);
         sensorData data = generateData();
         //reading
-        int numOfBytes = read(newsockfd, buffer, BUFFER_SIZE - 1);
+        int numOfBytes = read(*newsockfd, buffer, BUFFER_SIZE - 1);
         	if (numOfBytes == -1) {
 			fprintf(stderr, "Error: failed reading from client!\n");
 			break;
 		}
-		else if (numOfBytes == 0) {
+		if (numOfBytes == 0) {
 			printf("Client exited normally\n");
 			break;
 		}
@@ -86,13 +81,13 @@ void chat(int newsockfd, char buffer[],pthread_t thread_id)
         //writing to client
         strcpy(toWrite, toReturn);
         printf("Echoing back - %s\n", toWrite);
-        write(newsockfd, toWrite, strlen(toWrite) + 1);
+        write(*newsockfd, toWrite, strlen(toWrite) + 1);
         //writing to file
         if (strcmp(toReturn, "UNKNOWN") != 0 && !reset)
         {
             char toFile[BUFFER_SIZE];
             memset(toFile, 0, BUFFER_SIZE);
-            sprintf(toFile, "%d %d %d %d ",
+            sprintf(toFile, "%ld %d %d %d ",
             recSensData->ID,recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
             writeFile('s', toFile,NULL);
         }
@@ -105,28 +100,26 @@ void chat(int newsockfd, char buffer[],pthread_t thread_id)
         }
     }
     }
-       
-   free(recSensData);
+    remove_sensor(recSensData);   
 }
-//import #include "pthread.h"
-//include -lpthread in make file
-//create a method to recv and send after create thread 
-//handle shared resources with mutex 
-//check ws13
-void* clientHandler(void *sock){
 
+void* clientHandler(void*thread)
+{   
+    client_thread*clientThread = thread;
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
 
-	int* newsockfd_ptr = (int*)sock;
-	int newsockfd = *newsockfd_ptr;
+	int *newsockfd = (int*)clientThread->comm;
+    printf("newsock %d\n",*newsockfd);
 	pthread_t thread_id = pthread_self();
 
-	printf("\nClient %lu using socket %x\n", (unsigned long)thread_id, newsockfd);
-
+	printf("\nClient %lu using socket %x\n", (unsigned long)thread_id, *newsockfd);
+    //generate a collection
+    sensor *recSensData = initialiseCollection();
+    clientThread->clientSensor->next = recSensData;
 	// Start chating
-    chat(newsockfd, buffer,(unsigned long)thread_id);
-    close(newsockfd);
+    chat(newsockfd, buffer,clientThread);
+    free(thread);
 	return NULL;
 }
 int main(int argc, char const *argv[])
@@ -134,6 +127,8 @@ int main(int argc, char const *argv[])
     int sockfd,thread_result;
     struct sockaddr_in serv_addr,client_addr; // add client address 
     socklen_t clientlen = sizeof(client_addr);//get the length of the client address
+    //create collection of client sensor readings
+    sensor *clientSensor = initialiseCollection();
     //create the thread structure
     pthread_t thread;
     //init the mutex lock for files
@@ -178,7 +173,7 @@ int main(int argc, char const *argv[])
 
     for (;;)
     {   
-       
+        
         int*comm = malloc(sizeof(int));
         if(comm == NULL){
             fprintf(stderr,"Error: while locating memory");
@@ -189,10 +184,17 @@ int main(int argc, char const *argv[])
         if (*comm != -1)
         {
             printf("Accepted connection from client\n");
-            thread_result= pthread_create(&thread,NULL,clientHandler,comm);
+            //add client to the list
+            client_thread *newclient =(client_thread *)malloc(sizeof(client_thread));
+            newclient->comm = comm;
+            newclient->clientSensor=clientSensor;
+            //add_sensor_at_end(newclient->clientSensor);
+            printf("count %d",count_list_size());
+            thread_result= pthread_create(&thread,NULL,clientHandler,newclient);
             if(thread_result != 0){
                 fprintf(stderr,"Error while creating thread \n");
                 free(comm);
+                 close(sockfd);
                 return 5;
             }
         }

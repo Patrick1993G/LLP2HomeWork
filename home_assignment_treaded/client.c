@@ -167,7 +167,6 @@ int main(int argc, char const *argv[])
     bool on = true;
     do
     {
-        
         signal(SIGINT, SIG_IGN);
         memset(sendBuffer, 0, BUFFER_SIZE);
         memset(recvBuffer, 0, BUFFER_SIZE);
