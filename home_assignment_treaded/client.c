@@ -42,10 +42,11 @@ void describe(char *recvBuffer, char *sendBuffer, char *filename)
         printf("Sent reset to server ! waiting for reply...\n");
         if (strcmp(recvBuffer, "OK") == 0)
         { // if server file was deleted
-            if (removeFile(path))
-            {
-                reset = true;
-            }
+            // if (removeFile(path))
+            // {
+            //     reset = true;
+            // }
+             printf("Server file was deleted!\n");
         }
     }
     else if (strcmp(sendBuffer, "PH\n") == 0 || strcmp(sendBuffer, "ph\n") == 0)
@@ -109,13 +110,13 @@ void describe(char *recvBuffer, char *sendBuffer, char *filename)
     {
         printf("Unknown command\n");
     }
-    if (reset == false)
-    {
+    // if (reset == false)
+    // {
 //writing to file if FULL is defined
 #if defined(DBGCLIENT) || defined(FULL)
         sendTofile(sendBuffer, recvBuffer, path);
 #endif
-    }
+   // }
     free(path);
     path = NULL;
 }
