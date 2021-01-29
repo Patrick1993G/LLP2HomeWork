@@ -7,17 +7,15 @@
 #include <stdbool.h>
 #include "collection.h"
 #include "files.h"
+
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
-
-
-
+sensor *recSensData;
 void chat(int newsockfd, char buffer[])
 {
-    //generate a collection
-    sensor *recSensData = initialiseCollection();
+   
     char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE];
-  //add sensor to list
+
     char path[14]="./server.data";
     readFile(path,recSensData);
     while (1)
@@ -27,13 +25,23 @@ void chat(int newsockfd, char buffer[])
         memset(toReturn, 0, BUFFER_SIZE);
         
         sensorData data = generateData();
-        //reading
-        read(newsockfd, buffer, BUFFER_SIZE - 1);
+         //reading
+        int numOfBytes = read(newsockfd, buffer, BUFFER_SIZE - 1);
+        	if (numOfBytes == -1) {
+			fprintf(stderr, "Error: failed reading from client!\n");
+			break;
+		}
+		if (numOfBytes == 0) {
+			printf("Client exited normally\n");
+			break;
+		}
+        else{
+          
         printf("Recieved - %s\n", buffer);
 
         if (strcmp(buffer, "RESET\n") == 0 || strcmp(buffer, "reset\n") == 0)
         {
-            
+            free(recSensData);
             recSensData = initialiseCollection();
 
             if (removeFile(path) && !reset)
@@ -75,6 +83,7 @@ void chat(int newsockfd, char buffer[])
         strcpy(toWrite, toReturn);
         printf("Echoing back - %s\n", toWrite);
         write(newsockfd, toWrite, strlen(toWrite) + 1);
+
         //writing to file
         if (strcmp(toReturn, "UNKNOWN") != 0 && !reset)
         {
@@ -92,7 +101,7 @@ void chat(int newsockfd, char buffer[])
             break;
         }
     }
-   free(recSensData);
+    }
 }
 int main(int argc, char const *argv[])
 {
@@ -100,6 +109,8 @@ int main(int argc, char const *argv[])
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
     struct sockaddr_in serv_addr;
+    //generate a collection
+    recSensData = initialiseCollection();
     //create a socket
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -108,33 +119,36 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "ERROR: Failed to open socket\n");
         return 1;
     }
+
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     serv_addr.sin_port = htons(HTTP_PORT);
+
     // allow to reuse the socket as soon as it stops being active */
     int so_reuse_enabled = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &so_reuse_enabled, sizeof(int)) < 0)
     {
         fprintf(stderr, "Reusing of socket failed\n");
-        return -2;
+        return 2;
     }
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         fprintf(stderr, "ERROR: bind() failed\n");
         fprintf(stderr, "Error code: %s\n", strerror(errno));
-        return 2;
+        return 3;
     }
 
     if (listen(sockfd, 10) < 0)
     {
         fprintf(stderr, "ERROR: listen() failed\n");
         fprintf(stderr, "Error code: %s\n", strerror(errno));
-        return 3;
+        return 4;
     }
 
     for (;;)
-    {   printf("Listening for a client...\n");
+    {   
+        printf("Listening for a client...\n");
         newsockfd = accept(sockfd, (struct sockaddr *)NULL, NULL);
         if (newsockfd != -1)
         {
@@ -143,12 +157,13 @@ int main(int argc, char const *argv[])
         }
         else
         {
-            char *toWrite = "serverExit";
             fprintf(stderr, "ERROR: connection failed\n");
             fprintf(stderr, "Error code: %s\n", strerror(errno));
             return -5;
         }
         close(newsockfd); //close the temp socket
     }
+    free(recSensData);
+    recSensData = NULL;
     close(sockfd);
 }

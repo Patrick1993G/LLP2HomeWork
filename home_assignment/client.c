@@ -42,10 +42,7 @@ void describe(char *recvBuffer, char *sendBuffer, char *filename)
         printf("Sent reset to server ! waiting for reply...\n");
         if (strcmp(recvBuffer, "OK") == 0)
         { // if server file was deleted
-            if (removeFile(path))
-            {
-                reset = true;
-            }
+            printf("Server file was deleted!\n");
         }
     }
     else if (strcmp(sendBuffer, "PH\n") == 0 || strcmp(sendBuffer, "ph\n") == 0)
