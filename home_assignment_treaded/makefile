@@ -6,7 +6,7 @@ MKDIR = mkdir -p
 
 build_all: debug release
 
-rebuild_all: clean build_all
+rebuild_all: clean_all build_all
 
 debug: 
 	$(MKDIR) bin/dbg

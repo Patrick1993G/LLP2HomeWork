@@ -5,29 +5,27 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
-#include "pthread.h" // for threads
 #include "collection.h"
 #include "files.h"
+
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
+sensor *recSensData;
 
-void chat(int *newsockfd, char buffer[],client_thread*thread)
+void chat(int newsockfd, char buffer[])
 {
-    sensor *recSensData = thread->clientSensor;
     char toWrite[BUFFER_SIZE], toReturn[BUFFER_SIZE];
     //add sensor to list
     char path[14]="./server.data";
     readFile(path,recSensData);
-    recSensData->ID=(unsigned long)thread->id;
     while (1)
     {
         bool reset = false;
         memset(toWrite, 0, BUFFER_SIZE);
         memset(toReturn, 0, BUFFER_SIZE);
-        printf("newsock in chat %d\n",*newsockfd);
         sensorData data = generateData();
         //reading
-        int numOfBytes = read(*newsockfd, buffer, BUFFER_SIZE - 1);
+        int numOfBytes = read(newsockfd, buffer, BUFFER_SIZE - 1);
         	if (numOfBytes == -1) {
 			fprintf(stderr, "Error: failed reading from client!\n");
 			break;
@@ -37,11 +35,12 @@ void chat(int *newsockfd, char buffer[],client_thread*thread)
 			break;
 		}
         else{
+          
         printf("Recieved - %s\n", buffer);
 
         if (strcmp(buffer, "RESET\n") == 0 || strcmp(buffer, "reset\n") == 0)
         {
-            
+            free(recSensData);
             recSensData = initialiseCollection();
 
             if (removeFile(path) && !reset)
@@ -56,18 +55,30 @@ void chat(int *newsockfd, char buffer[],client_thread*thread)
         }
         else if (strcmp(buffer, "PH\n") == 0 || strcmp(buffer, "ph\n") == 0)
         {
+            //lock structure
+            pthread_mutex_lock(&data_mutex);
             sprintf(toReturn, "%.2f", data.PH);
             recSensData->PH += 1;
+            //unlock 
+            pthread_mutex_unlock(&data_mutex); 
         }
         else if (strcmp(buffer, "MOISTURE\n") == 0 || strcmp(buffer, "moisture\n") == 0)
         {
+            //lock structure
+            pthread_mutex_lock(&data_mutex);
             sprintf(toReturn, "%d", data.MOISTURE);
             recSensData->MOISTURE += 1;
+            //unlock 
+            pthread_mutex_unlock(&data_mutex); 
         }
         else if (strcmp(buffer, "SUNLIGHT\n") == 0 || strcmp(buffer, "sunlight\n") == 0)
         {
+            //lock structure
+            pthread_mutex_lock(&data_mutex);
             sprintf(toReturn, "%d", data.SUNLIGHT);
             recSensData->SUNLIGHT += 1;
+            //unlock 
+            pthread_mutex_unlock(&data_mutex); 
         }
         else if (strcmp(buffer, "STATS\n") == 0 || strcmp(buffer, "stats\n") == 0)
         {
@@ -81,45 +92,43 @@ void chat(int *newsockfd, char buffer[],client_thread*thread)
         //writing to client
         strcpy(toWrite, toReturn);
         printf("Echoing back - %s\n", toWrite);
-        write(*newsockfd, toWrite, strlen(toWrite) + 1);
+        write(newsockfd, toWrite, strlen(toWrite) + 1);
+        
         //writing to file
         if (strcmp(toReturn, "UNKNOWN") != 0 && !reset)
         {
             char toFile[BUFFER_SIZE];
             memset(toFile, 0, BUFFER_SIZE);
-            sprintf(toFile, "%ld %d %d %d ",
-            recSensData->ID,recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
+            sprintf(toFile, "%d %d %d ",
+            recSensData->PH, recSensData->MOISTURE, recSensData->SUNLIGHT);
             writeFile('s', toFile,NULL);
+            
         }
-
+         
         // if message contains exit.
         if (strncmp("exit", buffer, 4) == 0)
         {
             printf("Client Exiting...\n");
             break;
         }
+        
     }
-    }
-    remove_sensor(recSensData);   
+    }  
 }
 
-void* clientHandler(void*thread)
+void* clientHandler(void*sock)
 {   
-    client_thread*clientThread = thread;
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
 
-	int *newsockfd = (int*)clientThread->comm;
-    printf("newsock %d\n",*newsockfd);
+	int* newsockfd_ptr = (int*)sock;	
+	int newsockfd = *newsockfd_ptr;
 	pthread_t thread_id = pthread_self();
 
-	printf("\nClient %lu using socket %x\n", (unsigned long)thread_id, *newsockfd);
-    //generate a collection
-    sensor *recSensData = initialiseCollection();
-    clientThread->clientSensor->next = recSensData;
+	printf("\nClient %lu using socket %x\n", (unsigned long)thread_id, newsockfd);
 	// Start chating
-    chat(newsockfd, buffer,clientThread);
-    free(thread);
+    chat(newsockfd, buffer);
+    close(newsockfd);
 	return NULL;
 }
 int main(int argc, char const *argv[])
@@ -127,12 +136,16 @@ int main(int argc, char const *argv[])
     int sockfd,thread_result;
     struct sockaddr_in serv_addr,client_addr; // add client address 
     socklen_t clientlen = sizeof(client_addr);//get the length of the client address
-    //create collection of client sensor readings
-    sensor *clientSensor = initialiseCollection();
+    
+    //generate a collection	   
+    recSensData = initialiseCollection();
     //create the thread structure
     pthread_t thread;
     //init the mutex lock for files
     pthread_mutex_init(&file_mutex,NULL);
+     //init the mutex lock for data
+    pthread_mutex_init(&data_mutex,NULL);
+
     //create a socket
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -147,7 +160,7 @@ int main(int argc, char const *argv[])
     serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     serv_addr.sin_port = htons(HTTP_PORT);
 
-    // allow to reuse the socket as soon as it stops being active */
+    // allow to reuse the socket as soon as it stops being active 
     int so_reuse_enabled = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &so_reuse_enabled, sizeof(int)) < 0)
     {
@@ -155,6 +168,7 @@ int main(int argc, char const *argv[])
         close(sockfd);
         return 2;
     }
+
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         fprintf(stderr, "ERROR: bind() failed\n");
@@ -162,6 +176,7 @@ int main(int argc, char const *argv[])
         close(sockfd);
         return 3;
     }
+
     printf("Listening for a client...\n");
     if (listen(sockfd, 10) != 0) // max 10 clients
     {
@@ -184,17 +199,13 @@ int main(int argc, char const *argv[])
         if (*comm != -1)
         {
             printf("Accepted connection from client\n");
-            //add client to the list
-            client_thread *newclient =(client_thread *)malloc(sizeof(client_thread));
-            newclient->comm = comm;
-            newclient->clientSensor=clientSensor;
-            //add_sensor_at_end(newclient->clientSensor);
-            printf("count %d",count_list_size());
-            thread_result= pthread_create(&thread,NULL,clientHandler,newclient);
+            
+            thread_result= pthread_create(&thread,NULL,clientHandler,comm);
             if(thread_result != 0){
                 fprintf(stderr,"Error while creating thread \n");
                 free(comm);
-                 close(sockfd);
+                comm = NULL;
+                close(sockfd);
                 return 5;
             }
         }
@@ -203,10 +214,14 @@ int main(int argc, char const *argv[])
             fprintf(stderr, "ERROR: connection failed\n");
             fprintf(stderr, "Error code: %s\n", strerror(errno));
             free(comm);
+            comm = NULL;
             return 6;
         }
     }
     //destroy lock
     pthread_mutex_destroy(&file_mutex);
+    pthread_mutex_destroy(&data_mutex);
+    free(recSensData);
+    recSensData = NULL;
     close(sockfd);
 }

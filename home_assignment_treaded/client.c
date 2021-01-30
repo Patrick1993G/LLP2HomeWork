@@ -20,7 +20,6 @@ void sendTofile(char *sendBuffer, char *recvBuffer, char *fileName)
     char toFile[BUFFER_SIZE];
     memset(toFile, 0, BUFFER_SIZE);
     sprintf(toFile, "%s : %s --> %s", timeString, sendBuffer, recvBuffer);
-    printf("path to file %s\n", fileName);
     writeFile('c', toFile, fileName);
 }
 
@@ -28,25 +27,23 @@ void sendTofile(char *sendBuffer, char *recvBuffer, char *fileName)
 void describe(char *recvBuffer, char *sendBuffer, char *filename)
 {
     char *path = (char *)malloc(sizeof(char) * 50);
+
     if (path == NULL)
     {
         fprintf(stderr, "error !\n");
     }
+
 #if defined(DBGCLIENT) || defined(FULL)
 
     sprintf(path, "./%s", filename);
 #endif
-    bool reset = false;
+    
     if (strcmp(sendBuffer, "RESET\n") == 0 || strcmp(sendBuffer, "reset\n") == 0)
     {
         printf("Sent reset to server ! waiting for reply...\n");
         if (strcmp(recvBuffer, "OK") == 0)
-        { // if server file was deleted
-            // if (removeFile(path))
-            // {
-            //     reset = true;
-            // }
-             printf("Server file was deleted!\n");
+        { 
+            printf("Server file was deleted!\n");
         }
     }
     else if (strcmp(sendBuffer, "PH\n") == 0 || strcmp(sendBuffer, "ph\n") == 0)
@@ -110,13 +107,11 @@ void describe(char *recvBuffer, char *sendBuffer, char *filename)
     {
         printf("Unknown command\n");
     }
-    // if (reset == false)
-    // {
+
 //writing to file if FULL is defined
 #if defined(DBGCLIENT) || defined(FULL)
         sendTofile(sendBuffer, recvBuffer, path);
 #endif
-   // }
     free(path);
     path = NULL;
 }
@@ -159,13 +154,16 @@ int main(int argc, char const *argv[])
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // connect to local host
     serv_addr.sin_port = htons(HTTP_PORT);
+
     //Connect
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
     {
         printf("ERROR: connecting failed !\n");
         return -2;
     }
-    bool on = true;
+
+    bool on = true;//boolean var for exiting loop
+
     do
     {
         signal(SIGINT, SIG_IGN);
@@ -175,7 +173,10 @@ int main(int argc, char const *argv[])
         printf(" \nEnter your request:");
 
         fgets(sendBuffer, BUFFER_SIZE - 1, stdin);
-        
+        //for testing only !
+        // if(strlen(sendBuffer) == 0 || strcmp("\n",sendBuffer) == 0){
+        //     break;
+        // }
         if (write(sockfd, sendBuffer, strlen(sendBuffer) + 1) < 0)
         {
             fprintf(stderr, "write to buffer failed\n");

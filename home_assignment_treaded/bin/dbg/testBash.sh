@@ -1,1 +1,0 @@
-./client_normal < test.txt & ./client_normal < test.txt & ./client_normal < test.txt

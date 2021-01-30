@@ -69,7 +69,7 @@ void writeFile(char whereTo, char *toWrite, char *clientPath)
         strcpy(path, "./server.data");
         //lock file
         pthread_mutex_lock(&file_mutex);
-        writeToFile(path, toWrite,"a");
+        writeToFile(path, toWrite,"w");
         //unlock file
         pthread_mutex_unlock(&file_mutex);
         break;
@@ -90,7 +90,7 @@ void readFile(char *path, sensor *recSensData)
         while (!feof(fp))
         {
             //reading...
-            if (fscanf(fp, "%ld %d %d %d ",&recSensData->ID,&recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 4)
+            if (fscanf(fp, "%d %d %d ",&recSensData->PH, &recSensData->MOISTURE, &recSensData->SUNLIGHT) != 3)
             {
                 printf("error reading file!");
                 break; //file format mismatch
