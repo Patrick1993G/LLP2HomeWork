@@ -20,7 +20,6 @@ void sendTofile(char *sendBuffer, char *recvBuffer, char *fileName)
     char toFile[BUFFER_SIZE];
     memset(toFile, 0, BUFFER_SIZE);
     sprintf(toFile, "%s : %s --> %s", timeString, sendBuffer, recvBuffer);
-    printf("path to file %s\n", fileName);
     writeFile('c', toFile, fileName);
 }
 

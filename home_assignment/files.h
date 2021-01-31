@@ -1,11 +1,10 @@
-#ifndef files
-#define files
+#ifndef FILES_H_INCLUDED
+#define FILES_H_INCLUDED
 //opening a file
 FILE *openFile(char *path, char *symbol)
 {
     FILE *fp;
     fp = fopen(path, symbol);
-    printf("path to file %s\n", path);
     if (fp == NULL)
     {
         fprintf(stderr, "Can't open input file!\n");
@@ -36,8 +35,6 @@ void writeToFile(char *path, char *toWrite,char *symbol)
 {
     FILE *fp;
     fp = openFile(path, symbol);
-    printf("%s\n", path);
-    printf("%s\n", toWrite);
 
     if (fp != NULL)
     {

@@ -1,5 +1,5 @@
-#ifndef collection
-#define collection
+#ifndef COLLECTION_H_INCLUDED
+#define COLLECTION_H_INCLUDED
 
 #include <time.h>
 typedef struct SENSORS

@@ -11,6 +11,7 @@
 #define BUFFER_SIZE 1024
 #define HTTP_PORT 44444
 sensor *recSensData;
+
 void chat(int newsockfd, char buffer[])
 {
    
